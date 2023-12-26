@@ -74,7 +74,8 @@ contract ERC721M is IERC721M, ERC721AQueryable, Ownable, ReentrancyGuard {
         address cosigner,
         uint64 timestampExpirySeconds,
         address mintCurrency
-    ) ERC721A(collectionName, collectionSymbol) {
+    ) ERC721A(collectionName, collectionSymbol)
+    Ownable(msg.sender) {
         if (globalWalletLimit > maxMintableSupply)
             revert GlobalWalletLimitOverflow();
         _mintable = false;
@@ -546,7 +547,7 @@ contract ERC721M is IERC721M, ERC721AQueryable, Ownable, ReentrancyGuard {
     ) public view returns (bytes32) {
         if (_cosigner == address(0)) revert CosignerNotSet();
         return
-            keccak256(
+            toEthSignedMessageHash(keccak256(
                 abi.encodePacked(
                     address(this),
                     minter,
@@ -556,7 +557,18 @@ contract ERC721M is IERC721M, ERC721AQueryable, Ownable, ReentrancyGuard {
                     _chainID(),
                     getCosignNonce(minter)
                 )
-            ).toEthSignedMessageHash();
+            ));
+    }
+
+       function toEthSignedMessageHash(bytes32 hash)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return
+            keccak256(
+                abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
+            );
     }
 
     /**
